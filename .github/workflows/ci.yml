@@ -47,3 +47,22 @@ jobs:
           test -f README.md
           test -f CONTRIBUTING.md
           grep -q "Learning Git" README.md
+
+  
+  collect-reports:
+    name: Collect Python Test Reports
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download test artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: pytest-results-*
+          path: reports
+
+      - name: Display downloaded reports
+        run: |
+          echo "Downloaded test reports:"
+          find reports -type f
+
