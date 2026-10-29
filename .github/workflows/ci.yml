@@ -11,6 +11,26 @@ permissions:
   contents: read
 
 jobs:
+  lint:
+    name: Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Run Ruff
+        run: python -m ruff check src tests
+
   test:
     name: Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
@@ -22,27 +42,20 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'pip' #tells github actions to cache pip's downloaded packages
-          cache-dependency-path: 
-          #requirements.txt Specifies which dependency file should be hashed to help identify the appropriate cache.
-
-      - name: Display Python version
-        run: python --version
+          cache: 'pip'
+          cache-dependency-path: requirements.txt
 
       - name: Install dependencies
-        run: |
-          python -m pip install -r requirements.txt
+        run: python -m pip install -r requirements.txt
 
-      
       - name: Run unit tests
-        run: |
-          python -m pytest -v --junitxml=test-results.xml
+        run: python -m pytest -v --junitxml=test-results.xml
 
       - name: Upload test report
         if: always()
@@ -53,14 +66,12 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-
       - name: Validate documentation
         run: |
           test -f README.md
           test -f CONTRIBUTING.md
           grep -q "Learning Git" README.md
 
-  
   collect-reports:
     name: Collect Python Test Reports
     needs: test
@@ -78,3 +89,25 @@ jobs:
           echo "Downloaded test reports:"
           find reports -type f
 
+  ci-gate:
+    name: Final CI Gate
+    needs: [lint, test, collect-reports]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Verify required jobs
+        env:
+          LINT_RESULT: ${{ needs.lint.result }}
+          TEST_RESULT: ${{ needs.test.result }}
+          REPORT_RESULT: ${{ needs.collect-reports.result }}
+        run: |
+          echo "Lint: $LINT_RESULT"
+          echo "Tests: $TEST_RESULT"
+          echo "Reports: $REPORT_RESULT"
+
+          test "$LINT_RESULT" = "success"
+          test "$TEST_RESULT" = "success"
+          test "$REPORT_RESULT" = "success"
+
+          echo "All CI stages passed!"
