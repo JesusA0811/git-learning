@@ -1,0 +1,14 @@
+# Default owner for all files
+* @JesusA0811
+
+# Python source code
+/src/ @JesusA0811
+
+# Python tests
+/tests/ @JesusA0811
+
+# GitHub Actions workflows
+/.github/workflows/ @JesusA0811
+
+# Protect the ownership configuration itself
+/.github/CODEOWNERS @JesusA0811
