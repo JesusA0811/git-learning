@@ -1,0 +1,19 @@
+name: Documentation Check
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "**/*.md"
+
+permissions:
+  contents: read
+
+jobs:
+  docs:
+    name: Documentation Changed
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Confirm documentation update
+        run: echo "A Markdown file was changed!"
